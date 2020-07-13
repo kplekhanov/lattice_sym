@@ -26,13 +26,11 @@ class Symmetry:
         '''conf is assumed to be a list or a tuple'''
         return [conf[i] for i in self.perm]
 
-    def writeToFile(self, dirName):
-        os.system("mkdir -p {0}".format(dirName))
-        f = open(dirName + self.name, 'w')
+    def writeToFile(self, f, delimiter=' '):
         for el in self.perm:
-            f.write(str(el) + ' ')
+            f.write(str(el) + delimiter)
         f.write("(" + str(self.chi.real) + "," + str(self.chi.imag) + ")")
-        f.close()
+        f.write('\n')
 
 
 class Translation(list):
@@ -59,7 +57,6 @@ class LatticeSym(object):
         self.nCell = nCell
         self.basisVecs = basisVecs
         self.basisTrans = [Translation(trans) for trans in basisTrans]
-        self.spinInversion = 0
 
     def getName(self):
         if self.name is not None:
@@ -170,8 +167,8 @@ class LatticeSym(object):
         if not len(self.translations) == self.nCell:
             raise Exception("Error. Incorrect number of lattice translations "
                             "({0})".format(len(self.translations)))
-        self.lx = self.qnsMax[0]
-        self.ly = self.nCell / self.qnsMax[0]
+        self.lx = int(self.qnsMax[0])
+        self.ly = int(self.nCell / self.qnsMax[0])
         firstTiltedConf = self.basisTrans[1].do_apply(self.translations[(0,self.ly-1)])
         self.tilt = (self.lx-firstTiltedConf[0])%self.lx
 
@@ -224,7 +221,7 @@ class LatticeSym(object):
         return (kx, ky)
 
     def getPositionCart(self, n, m, siteIndex=0):
-        x = self.basisVecs[0][0]*n + self.basisVecs[1][0]*m 
+        x = self.basisVecs[0][0]*n + self.basisVecs[1][0]*m
         y = self.basisVecs[0][1]*n + self.basisVecs[1][1]*m
         x += self.inCellPos[siteIndex][0]
         y += self.inCellPos[siteIndex][1]
@@ -363,13 +360,13 @@ class LatticeSym(object):
             kyArr += kyArrTmp
             if showQns:
                 if reducedQns:
-                    text = str(self.qns.index((p,q)))
+                    #text = str(self.qns.index((p,q)))
+                    text = "{0},{1}".format(p,q)
                 else:
                     text = "({0}/{1},{2}/{3})".format(p,self.qnsMax[0],q,self.qnsMax[1])
                 for kxt, kyt in zip(kxArrTmp, kyArrTmp):
                     ax.text(kxt+dkxTxt, kyt+dkyTxt, text, fontsize=12, color="blue", zorder=30)
                     
         ax.scatter(kxArr, kyArr, s/6, alpha=1.0, zorder=20, color="red")
-        #plt.title("Allowed quantum numbers", fontsize=20)
 
         return fig, ax
