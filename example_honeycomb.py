@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from latticeSym.LatticeSym import LatticeSym
+from LatticeSym import LatticeSym
 
 lx, ly, tilt, nSiteInCell = 6, 2, -1, 2
 vecs = [np.array((np.sqrt(3),0)), np.array((np.sqrt(3)/2,3/2))]

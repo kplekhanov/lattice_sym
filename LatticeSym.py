@@ -1,6 +1,38 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from .Symmetry import Symmetry
+
+
+class Symmetry:
+    def __init__(self, nSites):
+        self.nSites = nSites
+        self.perm = range(nSites)  # initialize to identity
+        self.chi = complex(1.0)
+        self.name = "id.N_" + str(self.nSites)
+
+    def __repr__(self):
+        return self.name + " | " + str(self.perm) + " | " + str(self.chi)
+
+    def __mul__(self, otherSym):
+        if otherSym.nSites is not self.nSites:
+            raise Exception("Error: multiplied symetries have distinct sizes.")
+        else:
+            res = Symmetry(self.nSites)
+            res.perm = [self.perm[otherSym.perm[s]] for s in range(self.nSites)]
+            res.chi = self.chi * otherSym.chi
+            res.name = self.name + "x" + otherSym.name
+            return res
+
+    def do_apply(self, conf):
+        '''conf is assumed to be a list or a tuple'''
+        return [conf[i] for i in self.perm]
+
+    def writeToFile(self, dirName):
+        os.system("mkdir -p {0}".format(dirName))
+        f = open(dirName + self.name, 'w')
+        for el in self.perm:
+            f.write(str(el) + ' ')
+        f.write("(" + str(self.chi.real) + "," + str(self.chi.imag) + ")")
+        f.close()
 
 
 class Translation(list):
@@ -14,7 +46,7 @@ class Translation(list):
         else:
             raise Exception("Error. Translation multiplied to the Translation of inequal size.")
         
-    def Apply(self, positions):
+    def do_apply(self, positions):
         if len(self) == len(positions):
             return [self[positions[i]] for i in range(len(self))]
         else:
@@ -107,7 +139,7 @@ class LatticeSym(object):
         
         configN = identity[:]
         for n in range(1, self.nCell):
-            configN = self.basisTrans[0].Apply(configN)
+            configN = self.basisTrans[0].do_apply(configN)
             if configN == identity:
                 self.qnsMax[0] = n
                 break
@@ -118,7 +150,7 @@ class LatticeSym(object):
         
         configM = identity[:]
         for m in range(1, self.nCell):
-            configM = self.basisTrans[1].Apply(configM)
+            configM = self.basisTrans[1].do_apply(configM)
             if configM == identity:
                 self.qnsMax[1] = m
                 break
@@ -128,7 +160,7 @@ class LatticeSym(object):
                 self.positions[configM[0]] = (0,m)
             config = configM[:]
             for n in range(1, self.nCell):
-                config = self.basisTrans[0].Apply(config)
+                config = self.basisTrans[0].do_apply(config)
                 if config == identity:
                     break
                 if config not in self.translations.values():
@@ -140,7 +172,7 @@ class LatticeSym(object):
                             "({0})".format(len(self.translations)))
         self.lx = self.qnsMax[0]
         self.ly = self.nCell / self.qnsMax[0]
-        firstTiltedConf = self.basisTrans[1].Apply(self.translations[(0,self.ly-1)])
+        firstTiltedConf = self.basisTrans[1].do_apply(self.translations[(0,self.ly-1)])
         self.tilt = (self.lx-firstTiltedConf[0])%self.lx
 
     def buildQns(self, verbose=False):            
@@ -150,7 +182,7 @@ class LatticeSym(object):
         
         configN = identity
         for n in range(1,self.nCell+1):
-            configN = self.basisTrans[0].Apply(configN)
+            configN = self.basisTrans[0].do_apply(configN)
             if configN == identity:
                 for p,q in self.qns:
                     num = p*n/float(self.qnsMax[0])
@@ -159,7 +191,7 @@ class LatticeSym(object):
         
         configM = identity
         for m in range(1,self.nCell+1):
-            configM = self.basisTrans[1].Apply(configM)
+            configM = self.basisTrans[1].do_apply(configM)
             if configM == identity:
                 for p,q in self.qns:
                     num = q*m/float(self.qnsMax[1])
@@ -167,7 +199,7 @@ class LatticeSym(object):
                         self.qns.remove((p,q))
             config = configM[:]
             for n in range(1,self.nCell+1):
-                config = self.basisTrans[0].Apply(config)
+                config = self.basisTrans[0].do_apply(config)
                 if config == identity:
                     for p,q in self.qns:
                         num = p*n/float(self.qnsMax[0]) + q*m/float(self.qnsMax[1])
